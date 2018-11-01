@@ -1,0 +1,10 @@
+{
+  "name": "nodechat",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.16.4",
+    "ws": "^6.1.0"
+  }
+}

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link href="https://fonts.googleapis.com/css?family=Krub" rel="stylesheet">
+    <title>Node Chat</title>
+    <style>
+        * {
+            font-family: 'Krub', sans-serif;
+        }
+
+        .container {
+            padding: 4rem 10rem;
+        }
+
+        .box {
+            display: block;
+            margin: 0 auto;
+            width: 35rem;
+            min-height: 5rem;
+            box-shadow: 0 0 4px #797979;
+            border-radius: 5px;
+            position: relative;
+        }
+
+        .box > .box-header, .box > .box-content {
+            padding: 1.5rem;
+        }
+
+        .box > .box-header > .title {
+            font-size: 1em;
+            font-weight: 600;
+        }
+
+        .box .box-footer {
+            border-top: 1px solid #d4d0d0;
+            padding: 1rem;
+            display: flex;
+            flex-direction: row;
+        }
+
+        .input-group {
+            width: 100%;
+        }
+        .input-group > input {
+            width: 90%;
+        }
+
+        .box-content {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .box-content div {
+          display: inline-block;
+          color: white;
+          width: 30%;
+          word-break: break-all;
+        }
+
+        .other-user-message {
+          font-size: 0.9em;
+          padding: 1rem;
+          background-color: #a5a3a3;
+          border-radius: 2rem;
+        }
+
+        .my-message {
+          font-size: 0.9em;
+          padding: 1rem;
+          background-color: #1b57c0;
+          border-radius: 2rem;
+          position: relative;
+          left: 63%;
+          text-align: right;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 0;
+                height: 100%;
+            }
+            html,body {
+                margin: 0;
+                height: 100%;
+            }
+
+            .box {
+                width: 100vw;
+                height: 100%;
+                box-shadow: none;
+                display: flex;
+                /* flex-direction: column; */
+                flex-flow: column;
+                justify-content: space-between;
+            }
+
+            .box-content {
+              margin-bottom: auto;
+              font-size: 0.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <section class="container">
+        <div class="box">
+            <div class="box-header">
+                <span class="title">
+                    Node chat
+                </span>
+            </div>
+            <div class="box-content" id="chatbox">
+              <div class="other-user-message">
+                Outro
+              </div>
+              <div class="my-message">
+                Minha mensagem
+              </div>
+            </div>
+            <form id="form-message">
+                <div class="box-footer">
+                    <div class="input-group">
+                        <input type="text" name="message">
+                    </div>
+                    <button type="submit">Enviar</button>
+                </div>
+            </form>
+        </div>
+    </section>
+    <script type="text/javascript">
+      (function IIFE() {
+          const WS_PORT = 1234
+          const WS_HOST = 'localhost'
+
+          const form = document.getElementById('form-message')
+          const ws = new window.WebSocket(`ws://${WS_HOST}:${WS_PORT}`)
+          let messages = []
+
+          const renderChat = () => {
+            return messages.map(
+              (message) => {
+                if (message.id == localStorage.getItem('user_id')) {
+                  return ``
+                }
+              }
+            )
+          }
+
+          Array.prototype.pushMessage = function (item) {
+            return this.push(item)
+          }
+
+          ws.addEventListener('open', event => {
+            const payload = {
+              type: 'auth',
+              id: localStorage.getItem('user_id')
+            }
+
+            ws.send(JSON.stringify(payload))
+          })
+
+          const messageHandlers = {
+            auth: ({ id }) => {
+              if (!localStorage.getItem('user_id') && id) {
+                localStorage.setItem('user_id', id)
+              }
+            },
+
+            init: ({ messagesCollection }) => { messages = messagesCollection },
+
+            message: ({ id, messageText }) => messages.pushMessage({ id, messageText })
+          }
+
+          ws.addEventListener('message', message => {
+            const payload = JSON.parse(message.data)
+
+            messageHandlers[payload.type](payload)
+          })
+
+          form.addEventListener('submit', event => {
+            event.preventDefault()
+
+            const formData = new FormData(form)
+
+            console.log(messages)
+
+            ws.send(JSON.stringify({
+              type: 'message',
+              id: localStorage.getItem('user_id'),
+              messageText: formData.get('message')
+            }))
+          })
+      })()
+    </script>
+</body>
+</html>
